@@ -9,12 +9,16 @@ A fully functional Next.js website for a sandwich shop with customer ordering in
 - **Live Price Calculator**: Real-time price updates as you build your sandwich
 - **Order Form**: Customer details collection with validation
 - **Order Confirmation**: Clear confirmation message with customer details
+- **Loyalty Points System**: Earn and redeem points for orders
+- **Telegram Notifications**: Real-time order alerts to admin
 
 ### Admin Management Panel
 - **Secure Login**: Admin authentication (username: `admin`, password: `password123`)
 - **Bread Management**: Add, edit, and delete bread types with prices
 - **Topping Management**: Add, edit, and delete toppings with prices
 - **Order Viewing**: View all customer orders with details
+- **Loyalty Points Management**: Track and manage customer points
+- **Order Status Updates**: Mark orders as delivered to award points
 
 ## Technology Stack
 
@@ -30,12 +34,31 @@ A fully functional Next.js website for a sandwich shop with customer ordering in
    npm install
    ```
 
-2. **Run the development server**:
+2. **Set up environment variables**:
+   Create a `.env.local` file with your configuration:
+   ```env
+   # Supabase Configuration
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+   # Telegram Bot Configuration
+   TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+   TELEGRAM_CHAT_ID=your_telegram_chat_id
+   ```
+
+3. **Set up Telegram Bot** (Optional):
+   - Create a Telegram bot using [@BotFather](https://t.me/botfather)
+   - Get your bot token and add it to `.env.local`
+   - Send a message to your bot and get your chat ID from the API
+   - Update `TELEGRAM_CHAT_ID` in your environment variables
+
+4. **Run the development server**:
    ```bash
    npm run dev
    ```
 
-3. **Open your browser** and navigate to `http://localhost:3000`
+5. **Open your browser** and navigate to `http://localhost:3000`
 
 ## Project Structure
 

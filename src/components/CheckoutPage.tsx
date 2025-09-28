@@ -124,6 +124,40 @@ export default function CheckoutPage() {
           });
         }
       }
+
+      // Send Telegram notification for each unique sandwich
+      try {
+        for (const item of cart.items) {
+          const sandwichDescription = `${getLocalizedName(item.bread.name, language)} with ${item.toppings.map(topping => getLocalizedName(topping.name, language)).join(', ')}`;
+          const currentTime = new Date().toLocaleString('en-US', {
+            timeZone: 'Africa/Tunis',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+          });
+
+          await fetch('/api/telegram/notify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              username: customerName,
+              phoneNumber: phoneNumber,
+              sandwich: sandwichDescription,
+              price: getItemPrice(item),
+              time: currentTime,
+              paymentMethod: usePoints ? 'points' : 'cash'
+            })
+          });
+        }
+      } catch (telegramError) {
+        console.error('Telegram notification failed:', telegramError);
+        // Don't block the order if Telegram fails
+      }
     } catch (error) {
       console.error('Error creating orders:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
