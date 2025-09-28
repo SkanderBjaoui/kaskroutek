@@ -10,7 +10,7 @@ import { formatCurrencyWithEmoji, formatCurrencyNoEmoji } from '@/utils/currency
 import { getLocalizedName } from '@/utils/names';
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart();
+  const { cart, removeFromCart, updateQuantity, getTotalPrice } = useCart();
   const { t, language } = useLanguage();
   const router = useRouter();
 
