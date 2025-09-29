@@ -4,6 +4,7 @@ import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import PreloadGate from "@/components/PreloadGate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -38,7 +39,9 @@ export default function RootLayout({
         <LanguageProvider>
           <CartProvider>
             <AuthProvider>
-              {children}
+              <PreloadGate oncePerSession={false}>
+                {children}
+              </PreloadGate>
             </AuthProvider>
           </CartProvider>
         </LanguageProvider>

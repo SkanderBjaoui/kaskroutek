@@ -160,6 +160,11 @@ const translations: Record<Language, Translations> = {
     totalLabel: 'Total',
     status: 'Status',
     payment: 'Payment',
+
+    // Preloader
+    preloadingTitle: 'Building your sandwich...',
+    preloadingSubtitle: 'Preheating grill and loading fresh images',
+    preloadingTip: 'Tip: Try paying with points after a few orders!'
   },
   fr: {
     // Header
@@ -317,6 +322,11 @@ const translations: Record<Language, Translations> = {
     totalLabel: 'Total',
     status: 'Statut',
     payment: 'Paiement',
+
+    // Preloader
+    preloadingTitle: 'On prépare votre sandwich...',
+    preloadingSubtitle: 'Préchauffage du grill et chargement des images fraîches',
+    preloadingTip: 'Astuce : Essayez de payer avec des points après quelques commandes !'
   },
 };
 

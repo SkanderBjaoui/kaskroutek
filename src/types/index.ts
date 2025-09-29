@@ -239,4 +239,9 @@ export interface Translations {
   totalLabel: string;
   status: string;
   payment: string;
+
+  // Preloader
+  preloadingTitle: string;
+  preloadingSubtitle: string;
+  preloadingTip: string;
 }

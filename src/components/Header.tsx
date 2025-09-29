@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCart } from '@/contexts/CartContext';
@@ -44,7 +45,7 @@ export default function Header() {
                     : 'bg-transparent text-white border-white/40 hover:border-white/70 hover:bg-white/10'
                 }`}
               >
-                <span aria-hidden>🇬🇧</span>
+                <Image src="/flags/gb.svg" alt="" width={16} height={16} aria-hidden className="inline-block" />
                 <span>English</span>
               </button>
               <button
@@ -55,7 +56,7 @@ export default function Header() {
                     : 'bg-transparent text-white border-white/40 hover:border-white/70 hover:bg-white/10'
                 }`}
               >
-                <span aria-hidden>🇫🇷</span>
+                <Image src="/flags/fr.svg" alt="" width={16} height={16} aria-hidden className="inline-block" />
                 <span>Français</span>
               </button>
             </div>
@@ -114,7 +115,7 @@ export default function Header() {
                     : 'bg-transparent text-white border-white/40 hover:border-white/70 hover:bg-white/10'
                 }`}
               >
-                <span aria-hidden>🇬🇧</span>
+                <Image src="/flags/gb.svg" alt="" width={14} height={14} aria-hidden className="inline-block" />
                 <span>English</span>
               </button>
               <button
@@ -125,7 +126,7 @@ export default function Header() {
                     : 'bg-transparent text-white border-white/40 hover:border-white/70 hover:bg-white/10'
                 }`}
               >
-                <span aria-hidden>🇫🇷</span>
+                <Image src="/flags/fr.svg" alt="" width={14} height={14} aria-hidden className="inline-block" />
                 <span>Français</span>
               </button>
             </div>

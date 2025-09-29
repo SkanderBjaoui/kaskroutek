@@ -13,7 +13,7 @@ A fully functional Next.js website for a sandwich shop with customer ordering in
 - **Telegram Notifications**: Real-time order alerts to admin
 
 ### Admin Management Panel
-- **Secure Login**: Admin authentication (username: `admin`, password: `password123`)
+- **Secure Login**: Admin authentication
 - **Bread Management**: Add, edit, and delete bread types with prices
 - **Topping Management**: Add, edit, and delete toppings with prices
 - **Order Viewing**: View all customer orders with details
@@ -26,6 +26,7 @@ A fully functional Next.js website for a sandwich shop with customer ordering in
 - **TypeScript** for type safety
 - **Tailwind CSS** for styling
 - **React 19** with modern hooks
+- **Supabase** for database and auth
 
 ## Getting Started
 
@@ -47,18 +48,12 @@ A fully functional Next.js website for a sandwich shop with customer ordering in
    TELEGRAM_CHAT_ID=your_telegram_chat_id
    ```
 
-3. **Set up Telegram Bot** (Optional):
-   - Create a Telegram bot using [@BotFather](https://t.me/botfather)
-   - Get your bot token and add it to `.env.local`
-   - Send a message to your bot and get your chat ID from the API
-   - Update `TELEGRAM_CHAT_ID` in your environment variables
-
-4. **Run the development server**:
+3. **Run the development server**:
    ```bash
    npm run dev
    ```
 
-5. **Open your browser** and navigate to `http://localhost:3000`
+4. **Open your browser** and navigate to `http://localhost:3000`
 
 ## Project Structure
 
@@ -76,25 +71,79 @@ src/
 │   ├── OrderConfirmation.tsx # Order success modal
 │   └── SandwichBuilder.tsx   # Main ordering interface
 ├── data/
-│   └── store.ts              # Temporary data store (ready for Supabase)
+│   └── supabaseStore.ts      # Supabase-backed data store
 └── types/
     └── index.ts              # TypeScript type definitions
 ```
 
-## Data Structure
+## Database Schema (Context-Only)
 
-The application uses a temporary in-memory data store with the following entities:
+Warning: This schema is for context only and is not meant to be run. Table order and constraints may not be valid for execution.
 
-- **Bread**: `{ id, name, price }`
-- **Topping**: `{ id, name, price }`
-- **Order**: `{ id, customerName, phoneNumber, bread, toppings, totalPrice, createdAt }`
-
-## Supabase Integration Ready
-
-The data store is designed to be easily replaced with Supabase:
-- All CRUD operations are centralized in `DataStore` class
-- Type definitions are already set up
-- Database schema can be directly mapped to existing types
+```sql
+CREATE TABLE public.admin_users (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  username character varying NOT NULL UNIQUE,
+  password_hash character varying NOT NULL,
+  email character varying NOT NULL UNIQUE,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT admin_users_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.breads (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  name character varying NOT NULL,
+  price numeric NOT NULL,
+  image_url text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT breads_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.loyalty_points (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  phone_number character varying NOT NULL UNIQUE,
+  customer_name character varying NOT NULL,
+  total_points numeric NOT NULL DEFAULT 0.00,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT loyalty_points_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.orders (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  customer_name character varying NOT NULL,
+  phone_number character varying NOT NULL,
+  bread_id uuid,
+  toppings jsonb NOT NULL DEFAULT '[]'::jsonb,
+  total_price numeric NOT NULL,
+  status character varying DEFAULT 'awaiting_confirmation'::character varying CHECK (status::text = ANY (ARRAY['awaiting_confirmation'::character varying::text, 'confirmed'::character varying::text, 'in_preparation'::character varying::text, 'delivery'::character varying::text, 'delivered'::character varying::text, 'cancelled'::character varying::text])),
+  created_at timestamp with time zone DEFAULT now(),
+  delivered_at timestamp with time zone,
+  payment_method character varying NOT NULL DEFAULT 'cash'::character varying CHECK (payment_method::text = ANY (ARRAY['cash'::character varying, 'points'::character varying]::text[])),
+  CONSTRAINT orders_pkey PRIMARY KEY (id),
+  CONSTRAINT orders_bread_id_fkey FOREIGN KEY (bread_id) REFERENCES public.breads(id)
+);
+CREATE TABLE public.points_transactions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  phone_number text NOT NULL,
+  amount numeric NOT NULL,
+  type text NOT NULL CHECK (type = ANY (ARRAY['earn'::text, 'spend'::text, 'adjustment_add'::text, 'adjustment_subtract'::text])),
+  reason text,
+  related_order_id uuid,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT points_transactions_pkey PRIMARY KEY (id),
+  CONSTRAINT points_transactions_related_order_id_fkey FOREIGN KEY (related_order_id) REFERENCES public.orders(id)
+);
+CREATE TABLE public.toppings (
+  id uuid NOT NULL DEFAULT uuid_generate_v4(),
+  name character varying NOT NULL,
+  price numeric NOT NULL,
+  image_url text,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  category character varying DEFAULT 'extra'::character varying CHECK (category::text = ANY (ARRAY['salads'::character varying::text, 'meats'::character varying::text, 'condiments'::character varying::text, 'extra'::character varying::text])),
+  CONSTRAINT toppings_pkey PRIMARY KEY (id)
+);
+```
 
 ## Design Features
 
@@ -102,20 +151,6 @@ The data store is designed to be easily replaced with Supabase:
 - **Responsive Design**: Works on desktop, tablet, and mobile
 - **Modern UI**: Clean, intuitive interface with smooth transitions
 - **Accessibility**: Proper form labels, keyboard navigation, and semantic HTML
-
-## Admin Credentials
-
-- **Username**: `admin`
-- **Password**: `password123`
-
-## Future Enhancements
-
-- [ ] Supabase integration for persistent data
-- [ ] Payment processing
-- [ ] Order status tracking
-- [ ] Email notifications
-- [ ] Inventory management
-- [ ] Analytics dashboard
 
 ## Development
 
