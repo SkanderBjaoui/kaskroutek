@@ -380,7 +380,6 @@ export default function CheckoutPage() {
         <OrderConfirmation
           customerName={customerName}
           phoneNumber={phoneNumber}
-          onClose={() => setShowConfirmation(false)}
         />
       )}
     </div>

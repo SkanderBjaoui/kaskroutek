@@ -6,10 +6,9 @@ import { useRouter } from 'next/navigation';
 interface OrderConfirmationProps {
   customerName: string;
   phoneNumber: string;
-  onClose: () => void;
 }
 
-export default function OrderConfirmation({ customerName, phoneNumber, onClose }: OrderConfirmationProps) {
+export default function OrderConfirmation({ customerName, phoneNumber }: OrderConfirmationProps) {
   const { t } = useLanguage();
   const router = useRouter();
 

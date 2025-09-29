@@ -34,7 +34,20 @@ export default function UserRewards() {
       ]);
 
       if (ordersRes.error) throw ordersRes.error;
-      const userOrders: Order[] = (ordersRes.data || []).map((o: any) => ({
+      type OrdersRow = {
+        id: string;
+        customer_name: string;
+        phone_number: string;
+        bread: Order['bread'];
+        toppings: Order['toppings'] | null;
+        total_price: number;
+        status: Order['status'];
+        created_at: string;
+        delivered_at?: string | null;
+        payment_method?: 'cash' | 'points' | null;
+      };
+
+      const userOrders: Order[] = (ordersRes.data || []).map((o: OrdersRow) => ({
         id: o.id,
         customerName: o.customer_name,
         phoneNumber: o.phone_number,
@@ -44,7 +57,7 @@ export default function UserRewards() {
         status: o.status,
         createdAt: new Date(o.created_at),
         deliveredAt: o.delivered_at ? new Date(o.delivered_at) : undefined,
-        paymentMethod: (o.payment_method as 'cash' | 'points') || 'cash',
+        paymentMethod: o.payment_method ?? 'cash',
       }));
 
       setOrders(userOrders);
@@ -61,8 +74,8 @@ export default function UserRewards() {
         .filter(tx => tx.type === 'earn')
         .reduce((sum, tx) => sum + tx.amount, 0);
       setTotals({ spentCash, spentPoints, earnedPoints });
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error(error);
       alert('Failed to load your rewards data. Please try again.');
       setOrders([]);
       setPointsTx([]);

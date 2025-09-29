@@ -27,8 +27,8 @@ export class SupabaseStore {
       
       console.log('Supabase connection successful');
       return true;
-    } catch (err) {
-      console.error('Connection test error:', err);
+    } catch (error) {
+      console.error('Connection test error:', error);
       return false;
     }
   }
@@ -62,8 +62,8 @@ export class SupabaseStore {
         relatedOrderId: data.related_order_id || undefined,
         createdAt: new Date(data.created_at),
       };
-    } catch (e) {
-      console.error('Error logging points transaction:', e);
+    } catch (error) {
+      console.error('Error logging points transaction:', error);
       return null;
     }
   }
@@ -77,7 +77,16 @@ export class SupabaseStore {
 
     if (error) throw error;
 
-    return (data || []).map((row: any) => ({
+    type PointsRow = {
+      id: string;
+      phone_number: string;
+      amount: number | string;
+      type: PointsTransaction['type'];
+      reason?: string | null;
+      related_order_id?: string | null;
+      created_at: string;
+    };
+    return (data || []).map((row: PointsRow) => ({
       id: row.id,
       phoneNumber: row.phone_number,
       amount: parseFloat(row.amount),

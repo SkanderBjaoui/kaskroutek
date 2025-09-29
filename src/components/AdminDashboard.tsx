@@ -74,7 +74,7 @@ export default function AdminDashboard() {
     try {
       const points = await supabaseStore.getLoyaltyPoints(phone);
       setLoyaltyLookup(points ? { total: points.totalPoints } : { total: 0 });
-    } catch (e) {
+    } catch {
       setLoyaltyLookup(null);
     }
   };
@@ -111,7 +111,7 @@ export default function AdminDashboard() {
         setLoyaltyPointsToAdd('');
         alert('Points updated successfully');
       }
-    } catch (err) {
+    } catch {
       alert('Error updating points');
     } finally {
       setIsUpdatingPoints(false);
@@ -138,7 +138,19 @@ export default function AdminDashboard() {
       ]);
 
       if (ordersByPhone.error) throw ordersByPhone.error;
-      const orders: Order[] = (ordersByPhone.data || []).map((o: any) => ({
+      type OrdersRow = {
+        id: string;
+        customer_name: string;
+        phone_number: string;
+        bread: Order['bread'];
+        toppings: Order['toppings'] | null;
+        total_price: number;
+        status: Order['status'];
+        created_at: string;
+        delivered_at?: string | null;
+        payment_method?: 'cash' | 'points' | null;
+      };
+      const orders: Order[] = (ordersByPhone.data || []).map((o: OrdersRow) => ({
         id: o.id,
         customerName: o.customer_name,
         phoneNumber: o.phone_number,
@@ -148,7 +160,7 @@ export default function AdminDashboard() {
         status: o.status,
         createdAt: new Date(o.created_at),
         deliveredAt: o.delivered_at ? new Date(o.delivered_at) : undefined,
-        paymentMethod: (o.payment_method as 'cash' | 'points') || 'cash',
+        paymentMethod: o.payment_method ?? 'cash',
       }));
 
       setCustomerOrders(orders);
@@ -165,8 +177,8 @@ export default function AdminDashboard() {
         .filter(tx => tx.type === 'earn')
         .reduce((sum, tx) => sum + tx.amount, 0);
       setCustomerTotals({ spentCash, spentPoints, earnedPoints });
-    } catch (e) {
-      console.error('Error fetching customer data', e);
+    } catch (error) {
+      console.error('Error fetching customer data', error);
       setCustomerOrders([]);
       setCustomerPointsTx([]);
       setCustomerTotals({ spentCash: 0, spentPoints: 0, earnedPoints: 0 });
