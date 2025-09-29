@@ -89,7 +89,7 @@ export class SupabaseStore {
     return (data || []).map((row: PointsRow) => ({
       id: row.id,
       phoneNumber: row.phone_number,
-      amount: parseFloat(row.amount),
+      amount: typeof row.amount === 'number' ? row.amount : parseFloat(row.amount),
       type: row.type,
       reason: row.reason || undefined,
       relatedOrderId: row.related_order_id || undefined,

@@ -37,10 +37,7 @@ export default function Home() {
     setShowConfirmation(true);
   };
 
-  const handleCloseConfirmation = () => {
-    setShowConfirmation(false);
-    setConfirmationData(null);
-  };
+  // Confirmation closes when navigating away via the modal's button
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -53,7 +50,6 @@ export default function Home() {
         <OrderConfirmation
           customerName={confirmationData.customerName}
           phoneNumber={confirmationData.phoneNumber}
-          onClose={handleCloseConfirmation}
         />
       )}
     </div>
