@@ -69,6 +69,18 @@ export interface LoyaltyPoints {
   updatedAt: Date;
 }
 
+export type PointsTransactionType = 'earn' | 'spend' | 'adjustment_add' | 'adjustment_subtract';
+
+export interface PointsTransaction {
+  id: string;
+  phoneNumber: string;
+  amount: number; // positive for earn/add, negative for spend/subtract
+  type: PointsTransactionType;
+  reason?: string;
+  relatedOrderId?: string;
+  createdAt: Date;
+}
+
 export type Language = 'en' | 'fr';
 
 export interface Translations {
@@ -204,4 +216,27 @@ export interface Translations {
   paymentMethod: string;
   paidWithPoints: string;
   paidWithCash: string;
+  
+  // User Activity / Rewards
+  checkActivity: string;
+  myActivityTitle: string;
+  myActivitySubtitle: string;
+  viewMyActivity: string;
+
+  // Customers (Admin & User activity labels)
+  customers: string;
+  searchByPhone: string;
+  totalSpentCash: string;
+  pointsSpentLabel: string;
+  pointsBalance: string;
+  pastOrders: string;
+  pointsHistory: string;
+  loading: string;
+  noOrders: string;
+  noTransactions: string;
+  date: string;
+  breadLabel: string;
+  totalLabel: string;
+  status: string;
+  payment: string;
 }

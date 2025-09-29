@@ -18,6 +18,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Kaskroutek - Premium Sandwich Shop",
   description: "Build your perfect sandwich with our fresh ingredients and premium breads",
+  icons: {
+    icon: "/sandwich.png",
+    shortcut: "/sandwich.png",
+    apple: "/sandwich.png",
+  },
 };
 
 export default function RootLayout({

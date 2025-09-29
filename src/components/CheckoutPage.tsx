@@ -49,7 +49,7 @@ export default function CheckoutPage() {
   }, [phoneNumber]);
 
   // Calculate points needed for current order (1 point = 1 TND)
-  const pointsNeeded = Math.ceil(getTotalPrice());
+  const pointsNeeded = getTotalPrice();
   const canUsePoints = loyaltyPoints && loyaltyPoints.totalPoints >= pointsNeeded;
 
   const handleOrderSubmit = async (e: React.FormEvent) => {
@@ -172,7 +172,7 @@ export default function CheckoutPage() {
     setIsSubmitting(false);
   };
 
-  if (cart.items.length === 0) {
+  if (cart.items.length === 0 && !showConfirmation) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8 lg:p-12 text-center max-w-md mx-4">
@@ -319,7 +319,7 @@ export default function CheckoutPage() {
                           {canUsePoints ? (
                             <div className="space-y-2">
                               <div className="text-sm text-blue-700">
-                                {t.pointsNeeded}: {pointsNeeded} points
+                                {t.pointsNeeded}: {pointsNeeded.toFixed(2)} points
                               </div>
                               <label className="flex items-center space-x-2">
                                 <input

@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { Bread, Topping, Order, OrderStatus, LoyaltyPoints } from '@/types';
+import { Bread, Topping, Order, OrderStatus, LoyaltyPoints, PointsTransaction } from '@/types';
 import { parseBilingualName } from '@/utils/names';
 
 export class SupabaseStore {
@@ -31,6 +31,61 @@ export class SupabaseStore {
       console.error('Connection test error:', err);
       return false;
     }
+  }
+
+  // Points transactions
+  async logPointsTransaction(tx: Omit<PointsTransaction, 'id' | 'createdAt'>): Promise<PointsTransaction | null> {
+    try {
+      const { data, error } = await supabase
+        .from('points_transactions')
+        .insert({
+          phone_number: tx.phoneNumber,
+          amount: tx.amount,
+          type: tx.type,
+          reason: tx.reason,
+          related_order_id: tx.relatedOrderId,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error logging points transaction:', error);
+        return null;
+      }
+
+      return {
+        id: data.id,
+        phoneNumber: data.phone_number,
+        amount: parseFloat(data.amount),
+        type: data.type,
+        reason: data.reason || undefined,
+        relatedOrderId: data.related_order_id || undefined,
+        createdAt: new Date(data.created_at),
+      };
+    } catch (e) {
+      console.error('Error logging points transaction:', e);
+      return null;
+    }
+  }
+
+  async getPointsTransactionsByPhone(phoneNumber: string): Promise<PointsTransaction[]> {
+    const { data, error } = await supabase
+      .from('points_transactions')
+      .select('*')
+      .eq('phone_number', phoneNumber)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      phoneNumber: row.phone_number,
+      amount: parseFloat(row.amount),
+      type: row.type,
+      reason: row.reason || undefined,
+      relatedOrderId: row.related_order_id || undefined,
+      createdAt: new Date(row.created_at),
+    }));
   }
 
   // Bread methods
@@ -442,7 +497,7 @@ export class SupabaseStore {
           return null;
         }
 
-        return {
+        const result: LoyaltyPoints = {
           id: data.id,
           phoneNumber: data.phone_number,
           customerName: data.customer_name,
@@ -450,6 +505,7 @@ export class SupabaseStore {
           createdAt: new Date(data.created_at),
           updatedAt: new Date(data.updated_at)
         };
+        return result;
       } else {
         // Create new loyalty points record
         const { data, error } = await supabase
@@ -467,7 +523,7 @@ export class SupabaseStore {
           return null;
         }
 
-        return {
+        const created: LoyaltyPoints = {
           id: data.id,
           phoneNumber: data.phone_number,
           customerName: data.customer_name,
@@ -475,6 +531,7 @@ export class SupabaseStore {
           createdAt: new Date(data.created_at),
           updatedAt: new Date(data.updated_at)
         };
+        return created;
       }
     } catch (error) {
       console.error('Error creating/updating loyalty points:', error);
@@ -505,7 +562,7 @@ export class SupabaseStore {
         return null;
       }
 
-      return {
+      const result: LoyaltyPoints = {
         id: data.id,
         phoneNumber: data.phone_number,
         customerName: data.customer_name,
@@ -513,6 +570,14 @@ export class SupabaseStore {
         createdAt: new Date(data.created_at),
         updatedAt: new Date(data.updated_at)
       };
+      // Log spend transaction
+      await this.logPointsTransaction({
+        phoneNumber,
+        amount: -Math.abs(pointsToRedeem),
+        type: 'spend',
+        reason: 'Redeem at checkout',
+      });
+      return result;
     } catch (error) {
       console.error('Error redeeming loyalty points:', error);
       return null;
@@ -535,7 +600,15 @@ export class SupabaseStore {
         order.customerName,
         pointsToAward
       );
-      
+      if (result) {
+        await this.logPointsTransaction({
+          phoneNumber: order.phoneNumber,
+          amount: Math.abs(pointsToAward),
+          type: 'earn',
+          reason: 'Order delivered',
+          relatedOrderId: order.id,
+        });
+      }
       return result !== null;
     } catch (error) {
       console.error('Error awarding points for delivered order:', error);

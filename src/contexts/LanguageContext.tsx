@@ -137,6 +137,29 @@ const translations: Record<Language, Translations> = {
     paymentMethod: 'Payment Method',
     paidWithPoints: 'Paid with Points',
     paidWithCash: 'Paid with Cash',
+    
+    // User Activity / Rewards
+    checkActivity: 'Check Activity',
+    myActivityTitle: 'My Activity',
+    myActivitySubtitle: 'Track your spending and loyalty points.',
+    viewMyActivity: 'View My Activity',
+
+    // Customers
+    customers: 'Customers',
+    searchByPhone: 'Search by Phone Number',
+    totalSpentCash: 'Total Spent (Cash)',
+    pointsSpentLabel: 'Points Spent',
+    pointsBalance: 'Points Balance',
+    pastOrders: 'Past Orders',
+    pointsHistory: 'Points History',
+    loading: 'Loading...',
+    noOrders: 'No orders',
+    noTransactions: 'No transactions',
+    date: 'Date',
+    breadLabel: 'Bread',
+    totalLabel: 'Total',
+    status: 'Status',
+    payment: 'Payment',
   },
   fr: {
     // Header
@@ -271,6 +294,29 @@ const translations: Record<Language, Translations> = {
     paymentMethod: 'Méthode de Paiement',
     paidWithPoints: 'Payé avec les Points',
     paidWithCash: 'Payé en Espèces',
+    
+    // User Activity / Rewards
+    checkActivity: 'Consulter mon activité',
+    myActivityTitle: 'Mon Activité',
+    myActivitySubtitle: 'Suivez vos dépenses et vos points de fidélité.',
+    viewMyActivity: 'Voir mon activité',
+
+    // Customers
+    customers: 'Clients',
+    searchByPhone: 'Rechercher par numéro de téléphone',
+    totalSpentCash: 'Total dépensé (Espèces)',
+    pointsSpentLabel: 'Points dépensés',
+    pointsBalance: 'Solde de points',
+    pastOrders: 'Commandes passées',
+    pointsHistory: 'Historique des points',
+    loading: 'Chargement...',
+    noOrders: 'Aucune commande',
+    noTransactions: 'Aucune transaction',
+    date: 'Date',
+    breadLabel: 'Pain',
+    totalLabel: 'Total',
+    status: 'Statut',
+    payment: 'Paiement',
   },
 };
 

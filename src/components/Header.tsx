@@ -38,59 +38,67 @@ export default function Header() {
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setLanguage('en')}
-                className={`px-3 py-1 rounded text-sm transition-colors ${
-                  language === 'en' 
-                    ? 'bg-white text-primary font-semibold' 
-                    : 'hover:bg-primary-light'
+                className={`px-4 py-2 rounded-lg text-sm transition-colors shadow-sm border flex items-center gap-2 ${
+                  language === 'en'
+                    ? 'bg-amber-500 text-white font-semibold border-amber-500'
+                    : 'bg-transparent text-white border-white/40 hover:border-white/70 hover:bg-white/10'
                 }`}
               >
-                EN
+                <span aria-hidden>🇬🇧</span>
+                <span>English</span>
               </button>
               <button
                 onClick={() => setLanguage('fr')}
-                className={`px-3 py-1 rounded text-sm transition-colors ${
-                  language === 'fr' 
-                    ? 'bg-white text-primary font-semibold' 
-                    : 'hover:bg-primary-light'
+                className={`px-4 py-2 rounded-lg text-sm transition-colors shadow-sm border flex items-center gap-2 ${
+                  language === 'fr'
+                    ? 'bg-amber-500 text-white font-semibold border-amber-500'
+                    : 'bg-transparent text-white border-white/40 hover:border-white/70 hover:bg-white/10'
                 }`}
               >
-                FR
+                <span aria-hidden>🇫🇷</span>
+                <span>Français</span>
               </button>
             </div>
 
-            {/* Cart Badge */}
-            {getItemCount() > 0 && (
-              <Link
-                href="/cart"
-                className="relative bg-accent text-white px-3 py-1 rounded-full text-sm font-semibold hover:bg-accent-dark transition-colors"
-              >
-                {getItemCount()} {t.itemsInCart}
-              </Link>
-            )}
-            
             <nav className="flex items-center space-x-6">
               <Link
                 href="/"
-                className={`px-4 py-2 rounded-lg transition-colors ${
+                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
                   pathname === '/'
                     ? 'bg-white text-primary font-semibold'
-                    : 'hover:bg-primary-light'
+                    : 'border border-white/40 hover:border-white/70 hover:bg-white/10'
                 }`}
               >
-                {t.orderNow}
+                <span aria-hidden>🍽️</span>
+                <span>{t.orderNow}</span>
               </Link>
-              {getItemCount() > 0 && (
-                <Link
-                  href="/cart"
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    pathname === '/cart'
-                      ? 'bg-white text-primary font-semibold'
-                      : 'hover:bg-primary-light'
-                  }`}
-                >
-                  {t.cart}
-                </Link>
-              )}
+              <Link
+                href="/activity"
+                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                  pathname === '/activity'
+                    ? 'bg-white text-primary font-semibold'
+                    : 'border border-white/40 hover:border-white/70 hover:bg-white/10'
+                }`}
+              >
+                <span aria-hidden>📊</span>
+                <span>{t.checkActivity}</span>
+              </Link>
+              <Link
+                href="/cart"
+                className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                  pathname === '/cart'
+                    ? 'bg-accent text-white font-semibold'
+                    : 'bg-accent text-white hover:bg-accent-dark'
+                }`}
+              >
+                <span aria-hidden>🛒</span>
+                <span>{t.cart}</span>
+                {getItemCount() > 0 && (
+                  <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-white text-accent font-bold">
+                    {getItemCount()}
+                  </span>
+                )}
+              </Link>
             </nav>
           </div>
 
@@ -100,36 +108,27 @@ export default function Header() {
             <div className="flex items-center space-x-1">
               <button
                 onClick={() => setLanguage('en')}
-                className={`px-2 py-1 rounded text-xs transition-colors ${
-                  language === 'en' 
-                    ? 'bg-white text-primary font-semibold' 
-                    : 'hover:bg-primary-light'
+                className={`px-3 py-1.5 rounded-md text-xs transition-colors shadow-sm border flex items-center gap-1.5 ${
+                  language === 'en'
+                    ? 'bg-amber-500 text-white font-semibold border-amber-500'
+                    : 'bg-transparent text-white border-white/40 hover:border-white/70 hover:bg-white/10'
                 }`}
               >
-                EN
+                <span aria-hidden>🇬🇧</span>
+                <span>English</span>
               </button>
               <button
                 onClick={() => setLanguage('fr')}
-                className={`px-2 py-1 rounded text-xs transition-colors ${
-                  language === 'fr' 
-                    ? 'bg-white text-primary font-semibold' 
-                    : 'hover:bg-primary-light'
+                className={`px-3 py-1.5 rounded-md text-xs transition-colors shadow-sm border flex items-center gap-1.5 ${
+                  language === 'fr'
+                    ? 'bg-amber-500 text-white font-semibold border-amber-500'
+                    : 'bg-transparent text-white border-white/40 hover:border-white/70 hover:bg-white/10'
                 }`}
               >
-                FR
+                <span aria-hidden>🇫🇷</span>
+                <span>Français</span>
               </button>
             </div>
-
-            {/* Cart Badge for Mobile */}
-            {getItemCount() > 0 && (
-              <Link
-                href="/cart"
-                className="relative bg-accent text-white px-2 py-1 rounded-full text-xs font-semibold hover:bg-accent-dark transition-colors"
-                onClick={closeMobileMenu}
-              >
-                {getItemCount()}
-              </Link>
-            )}
 
             {/* Hamburger Menu Button */}
             <button
@@ -161,28 +160,45 @@ export default function Header() {
           <nav className="flex flex-col space-y-2 py-4 border-t border-primary-light">
             <Link
               href="/"
-              className={`px-4 py-3 rounded-lg transition-colors ${
+              className={`px-4 py-3 rounded-lg transition-colors flex items-center gap-2 ${
                 pathname === '/'
                   ? 'bg-white text-primary font-semibold'
-                  : 'hover:bg-primary-light'
+                  : 'border border-white/40 hover:border-white/70 hover:bg-white/10'
               }`}
               onClick={closeMobileMenu}
             >
-              {t.orderNow}
+              <span aria-hidden>🍽️</span>
+              <span>{t.orderNow}</span>
             </Link>
-            {getItemCount() > 0 && (
-              <Link
-                href="/cart"
-                className={`px-4 py-3 rounded-lg transition-colors ${
-                  pathname === '/cart'
-                    ? 'bg-white text-primary font-semibold'
-                    : 'hover:bg-primary-light'
-                }`}
-                onClick={closeMobileMenu}
-              >
-                {t.cart} ({getItemCount()} {t.itemsInCart})
-              </Link>
-            )}
+            <Link
+              href="/activity"
+              className={`px-4 py-3 rounded-lg transition-colors flex items-center gap-2 ${
+                pathname === '/activity'
+                  ? 'bg-white text-primary font-semibold'
+                  : 'border border-white/40 hover:border-white/70 hover:bg-white/10'
+              }`}
+              onClick={closeMobileMenu}
+            >
+              <span aria-hidden>📊</span>
+              <span>{t.checkActivity}</span>
+            </Link>
+            <Link
+              href="/cart"
+              className={`px-4 py-3 rounded-lg transition-colors flex items-center gap-2 ${
+                pathname === '/cart'
+                  ? 'bg-accent text-white font-semibold'
+                  : 'bg-accent text-white hover:bg-accent-dark'
+              }`}
+              onClick={closeMobileMenu}
+            >
+              <span aria-hidden>🛒</span>
+              <span>{t.cart}</span>
+              {getItemCount() > 0 && (
+                <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-white text-accent font-bold">
+                  {getItemCount()}
+                </span>
+              )}
+            </Link>
           </nav>
         </div>
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useRouter } from 'next/navigation';
 
 interface OrderConfirmationProps {
   customerName: string;
@@ -10,6 +11,7 @@ interface OrderConfirmationProps {
 
 export default function OrderConfirmation({ customerName, phoneNumber, onClose }: OrderConfirmationProps) {
   const { t } = useLanguage();
+  const router = useRouter();
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -36,12 +38,14 @@ export default function OrderConfirmation({ customerName, phoneNumber, onClose }
           </p>
         </div>
 
-        <button
-          onClick={onClose}
-          className="w-full py-3 px-6 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
-        >
-          {t.orderAnotherSandwich}
-        </button>
+        <div>
+          <button
+            onClick={() => router.push('/')}
+            className="w-full py-3 px-6 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
+          >
+            {t.orderAnotherSandwich}
+          </button>
+        </div>
       </div>
     </div>
   );
