@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useMemo, useState, ReactNode } from 'react';
+import { createContext, useContext, useMemo, useState, ReactNode, useCallback } from 'react';
 import { Bread, Topping, ToppingCategory } from '@/types';
 
 type ToppingQuantityMap = Record<string, number>; // toppingId -> quantity
@@ -28,25 +28,25 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
   const [isDoubleBread, setIsDoubleBread] = useState<boolean>(false);
   const [toppingQuantities, setToppingQuantities] = useState<ToppingQuantityMap>({});
 
-  const setBread = (bread: Bread) => {
+  const setBread = useCallback((bread: Bread) => {
     setSelectedBread(bread);
     // default to single
     setIsDoubleBread(false);
-  };
+  }, []);
 
-  const toggleDoubleBread = () => {
+  const toggleDoubleBread = useCallback(() => {
     if (!selectedBread) return;
     setIsDoubleBread(prev => !prev);
-  };
+  }, [selectedBread]);
 
-  const incrementTopping = (topping: Topping) => {
+  const incrementTopping = useCallback((topping: Topping) => {
     setToppingQuantities(prev => ({
       ...prev,
       [topping.id]: (prev[topping.id] || 0) + 1,
     }));
-  };
+  }, []);
 
-  const decrementTopping = (topping: Topping) => {
+  const decrementTopping = useCallback((topping: Topping) => {
     setToppingQuantities(prev => {
       const current = prev[topping.id] || 0;
       const next = Math.max(0, current - 1);
@@ -57,15 +57,15 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
       }
       return { ...prev, [topping.id]: next };
     });
-  };
+  }, []);
 
-  const clearBuilder = () => {
+  const clearBuilder = useCallback(() => {
     setSelectedBread(null);
     setIsDoubleBread(false);
     setToppingQuantities({});
-  };
+  }, []);
 
-  const getSelectedToppingsArray = (allToppings: Topping[]) => {
+  const getSelectedToppingsArray = useCallback((allToppings: Topping[]) => {
     // Expand quantities into repeated toppings
     const expanded: Topping[] = [];
     for (const topping of allToppings) {
@@ -73,14 +73,14 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
       for (let i = 0; i < qty; i++) expanded.push(topping);
     }
     return expanded;
-  };
+  }, [toppingQuantities]);
 
-  const getCategoryQuantity = (category: ToppingCategory, allToppings: Topping[]) => {
+  const getCategoryQuantity = useCallback((category: ToppingCategory, allToppings: Topping[]) => {
     return allToppings.reduce((sum, topping) => {
       if (topping.category === category) return sum + (toppingQuantities[topping.id] || 0);
       return sum;
     }, 0);
-  };
+  }, [toppingQuantities]);
 
   const value: BuilderContextType = useMemo(() => ({
     selectedBread,
@@ -93,7 +93,7 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
     clearBuilder,
     getSelectedToppingsArray,
     getCategoryQuantity,
-  }), [selectedBread, isDoubleBread, toppingQuantities, getSelectedToppingsArray, getCategoryQuantity, setBread, toggleDoubleBread, incrementTopping, decrementTopping, clearBuilder]);
+  }), [selectedBread, isDoubleBread, toppingQuantities, setBread, toggleDoubleBread, incrementTopping, decrementTopping, clearBuilder, getSelectedToppingsArray, getCategoryQuantity]);
 
   return (
     <BuilderContext.Provider value={value}>

@@ -10,7 +10,7 @@ import { formatCurrencyWithEmoji, formatCurrencyNoEmoji } from '@/utils/currency
 import { getLocalizedName, createBilingualName } from '@/utils/names';
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState<'breads' | 'toppings' | 'orders' | 'delivered' | 'cancelled' | 'loyalty' | 'customers'>('breads');
+  const [activeTab, setActiveTab] = useState<'breads' | 'toppings' | 'orders' | 'delivered' | 'cancelled' | 'loyalty' | 'customers' | 'timers'>('breads');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [breads, setBreads] = useState<Bread[]>([]);
