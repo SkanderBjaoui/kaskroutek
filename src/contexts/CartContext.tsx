@@ -1,16 +1,23 @@
 'use client';
 
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { Cart, CartItem, Bread, Topping } from '@/types';
+import { Cart, CartItem, Bread, Topping, DeliveryMethod } from '@/types';
 
 interface CartContextType {
   cart: Cart;
-  addToCart: (bread: Bread, toppings: Topping[]) => void;
+  addToCart: (bread: Bread, toppings: Topping[], options?: { isDoubleBread?: boolean }) => void;
   removeFromCart: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
   getTotalPrice: () => number;
   getItemCount: () => number;
+  deliveryMethod: DeliveryMethod;
+  setDeliveryMethod: (method: DeliveryMethod) => void;
+  pickupTimeISO?: string;
+  setPickupTimeISO: (iso?: string) => void;
+  shippingTimeISO?: string;
+  setShippingTimeISO: (iso?: string) => void;
+  shippingFee: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -20,14 +27,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
     items: [],
     totalPrice: 0,
   });
+  const [deliveryMethod, setDeliveryMethod] = useState<DeliveryMethod>('pickup');
+  const [pickupTimeISO, setPickupTimeISO] = useState<string | undefined>(undefined);
+  const [shippingTimeISO, setShippingTimeISO] = useState<string | undefined>(undefined);
+  const shippingFee = 0.5;
 
-  const addToCart = (bread: Bread, toppings: Topping[]) => {
-    const itemPrice = bread.price + toppings.reduce((sum, topping) => sum + topping.price, 0);
+  const addToCart = (bread: Bread, toppings: Topping[], options?: { isDoubleBread?: boolean }) => {
+    const breadPrice = bread.price * (options?.isDoubleBread ? 2 : 1);
+    const itemPrice = breadPrice + toppings.reduce((sum, topping) => sum + topping.price, 0);
     
     setCart(prevCart => {
       // Check if identical item already exists
       const existingItemIndex = prevCart.items.findIndex(item => 
         item.bread.id === bread.id && 
+        (!!item.isDoubleBread) === (!!options?.isDoubleBread) &&
         item.toppings.length === toppings.length &&
         item.toppings.every((topping, index) => topping.id === toppings[index].id)
       );
@@ -49,6 +62,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           id: Date.now().toString(),
           bread,
           toppings,
+          isDoubleBread: options?.isDoubleBread,
           quantity: 1,
           totalPrice: itemPrice,
         };
@@ -84,7 +98,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const getTotalPrice = () => {
-    return cart.items.reduce((sum, item) => sum + item.totalPrice, 0);
+    const itemsTotal = cart.items.reduce((sum, item) => sum + item.totalPrice, 0);
+    return itemsTotal + (deliveryMethod === 'shipping' ? shippingFee : 0);
   };
 
   const updateQuantity = (itemId: string, quantity: number) => {
@@ -127,6 +142,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     clearCart,
     getTotalPrice,
     getItemCount,
+    deliveryMethod,
+    setDeliveryMethod,
+    pickupTimeISO,
+    setPickupTimeISO,
+    shippingTimeISO,
+    setShippingTimeISO,
+    shippingFee,
   };
 
   return (
@@ -143,3 +165,4 @@ export function useCart() {
   }
   return context;
 }
+

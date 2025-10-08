@@ -123,6 +123,14 @@ const translations: Record<Language, Translations> = {
     shipping: 'Shipping',
     free: 'Free',
     backToCart: 'Back to Cart',
+    // Delivery / Timers UI
+    deliveryMethodLabel: 'Delivery Method',
+    pickup: 'Pickup',
+    pickupTimeToday: 'Pickup Time (today)',
+    shippingTimeToday: 'Shipping Time (today)',
+    noTimesAvailable: 'No times available',
+    clearSelection: 'Clear',
+    selectTimeToContinue: 'Please select a time to continue.',
     
     // Loyalty Points
     loyaltyPoints: 'Loyalty Points',
@@ -164,7 +172,13 @@ const translations: Record<Language, Translations> = {
     // Preloader
     preloadingTitle: 'Building your sandwich...',
     preloadingSubtitle: 'Preheating grill and loading fresh images',
-    preloadingTip: 'Tip: Try paying with points after a few orders!'
+    preloadingTip: 'Tip: Try paying with points after a few orders!',
+
+    // Builder UI
+    next: 'NEXT',
+    back: 'Back',
+    doubleBread: 'Double bread',
+    notePlaceholder: 'Optional note for your sandwich'
   },
   fr: {
     // Header
@@ -285,6 +299,14 @@ const translations: Record<Language, Translations> = {
     shipping: 'Livraison',
     free: 'Gratuit',
     backToCart: 'Retour au Panier',
+    // Delivery / Timers UI
+    deliveryMethodLabel: 'Mode de livraison',
+    pickup: 'Retrait',
+    pickupTimeToday: 'Heure de retrait (aujourd\'hui)',
+    shippingTimeToday: 'Heure de livraison (aujourd\'hui)',
+    noTimesAvailable: 'Aucun créneau disponible',
+    clearSelection: 'Effacer',
+    selectTimeToContinue: 'Veuillez sélectionner un créneau pour continuer.',
     
     // Loyalty Points
     loyaltyPoints: 'Points de Fidélité',
@@ -326,7 +348,16 @@ const translations: Record<Language, Translations> = {
     // Preloader
     preloadingTitle: 'On prépare votre sandwich...',
     preloadingSubtitle: 'Préchauffage du grill et chargement des images fraîches',
-    preloadingTip: 'Astuce : Essayez de payer avec des points après quelques commandes !'
+    preloadingTip: 'Astuce : Essayez de payer avec des points après quelques commandes !',
+
+    // Builder UI
+    next: 'Suivant',
+    back: 'Précédent',
+    doubleBread: 'Double pate',
+    notePlaceholder: 'Note optionelle pour votre sandwich'
+    ,
+    // Admin Timers
+    shippingTimers: 'Créneaux de livraison'
   },
 };
 
@@ -374,3 +405,4 @@ export function useLanguage() {
   }
   return context;
 }
+

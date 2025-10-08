@@ -42,6 +42,8 @@ export default function PreloadGate({ children, minDurationMs = 2000, timeoutMs 
           supabaseStore.getBreads().catch(() => []),
           supabaseStore.getToppings().catch(() => []),
         ]);
+        // Recompute timers for today so delivery/pickup selection reflects current availability
+        await supabaseStore.recomputeAllTimersActiveFlagsForToday().catch(() => {});
         const urls: string[] = [
           '/flags/gb.svg',
           '/flags/fr.svg',

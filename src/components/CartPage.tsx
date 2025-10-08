@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useEffect, useMemo, useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Link from 'next/link';
@@ -8,11 +9,14 @@ import { useRouter } from 'next/navigation';
 import { CartItem } from '@/types';
 import { formatCurrencyWithEmoji, formatCurrencyNoEmoji } from '@/utils/currency';
 import { getLocalizedName } from '@/utils/names';
+import { supabaseStore } from '@/data/supabaseStore';
 
 export default function CartPage() {
-  const { cart, removeFromCart, updateQuantity, getTotalPrice } = useCart();
+  const { cart, removeFromCart, updateQuantity, getTotalPrice, deliveryMethod, setDeliveryMethod, shippingFee, pickupTimeISO, setPickupTimeISO, shippingTimeISO, setShippingTimeISO } = useCart();
   const { t, language } = useLanguage();
   const router = useRouter();
+
+  const canProceedToCheckout = deliveryMethod === 'pickup' ? !!pickupTimeISO : !!shippingTimeISO;
 
   const getItemPrice = (item: CartItem) => {
     const basePrice = item.bread.price + item.toppings.reduce((sum: number, topping) => sum + topping.price, 0);
@@ -20,6 +24,7 @@ export default function CartPage() {
   };
 
   const handleCheckout = () => {
+    if (!canProceedToCheckout) return;
     router.push('/checkout');
   };
 
@@ -164,11 +169,35 @@ export default function CartPage() {
                     <span className="text-sm sm:text-base text-gray-600">{t.subtotal || 'Subtotal'}:</span>
                     <span className="font-semibold text-sm sm:text-base">{formatCurrencyWithEmoji(getTotalPrice())}</span>
                   </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm sm:text-base text-gray-600">{t.shipping || 'Shipping'}:</span>
-                    <span className="font-semibold text-green-600 text-sm sm:text-base">{t.free || 'Free'}</span>
+
+                  {/* Delivery Method */}
+                  <div className="pt-2 border-t">
+                    <div className="text-sm font-semibold text-gray-700 mb-2">{t.deliveryMethodLabel || 'Delivery Method'}</div>
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2">
+                        <input type="radio" checked={deliveryMethod === 'pickup'} onChange={() => setDeliveryMethod('pickup')} /> {t.pickup || 'Pickup'}
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input type="radio" checked={deliveryMethod === 'shipping'} onChange={() => setDeliveryMethod('shipping')} /> {t.shipping} (+{formatCurrencyNoEmoji(shippingFee)})
+                      </label>
+                    </div>
                   </div>
+
+                  {/* Pickup Timer (today only) */}
+                  {deliveryMethod === 'pickup' && (
+                    <div className="pt-2">
+                      <div className="text-sm font-semibold text-gray-700 mb-2">{t.pickupTimeToday || 'Pickup Time (today)'}</div>
+                      <Timers selectedISO={pickupTimeISO} onSelectISO={setPickupTimeISO} cutoffMinutes={30} />
+                    </div>
+                  )}
+
+                  {/* Shipping Timer (today only, no cutoff) */}
+                  {deliveryMethod === 'shipping' && (
+                    <div className="pt-2">
+                      <div className="text-sm font-semibold text-gray-700 mb-2">{t.shippingTimeToday || 'Shipping Time (today)'}</div>
+                      <Timers selectedISO={shippingTimeISO} onSelectISO={setShippingTimeISO} tableName="shipping_timers_delivery" />
+                    </div>
+                  )}
                   
                   <div className="border-t pt-3 sm:pt-4">
                     <div className="flex justify-between items-center text-lg sm:text-xl font-bold text-primary">
@@ -177,9 +206,13 @@ export default function CartPage() {
                     </div>
                   </div>
                   
+                  {!canProceedToCheckout && (
+                    <div className="text-xs text-red-600 -mt-1 mb-2">{t.selectTimeToContinue || 'Please select a time to continue.'}</div>
+                  )}
                   <button 
                     onClick={handleCheckout}
-                    className="w-full py-2 sm:py-3 px-4 sm:px-6 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors font-semibold text-sm sm:text-base"
+                    disabled={!canProceedToCheckout}
+                    className={`w-full py-2 sm:py-3 px-4 sm:px-6 rounded-lg transition-colors font-semibold text-sm sm:text-base ${canProceedToCheckout ? 'bg-primary text-white hover:bg-primary-light' : 'bg-gray-300 text-gray-600 cursor-not-allowed'}`}
                   >
                     {t.checkout || 'Check out'}
                   </button>
@@ -191,6 +224,72 @@ export default function CartPage() {
       </div>
 
 
+    </div>
+  );
+}
+
+function Timers({ selectedISO, onSelectISO, cutoffMinutes, tableName }: { selectedISO?: string; onSelectISO: (iso?: string) => void; cutoffMinutes?: number; tableName?: string }) {
+  const [timers, setTimers] = useState<{ id: string; dayOfWeek: number; time: string; active: boolean }[]>([]);
+  const { t } = useLanguage();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data, error } = await supabaseStore.supabase
+          .from(tableName || 'shipping_timers')
+          .select('*')
+          .eq('active', true);
+        if (!error) {
+          setTimers((data || []).map((r: any) => ({ id: r.id, dayOfWeek: r.day_of_week, time: r.time, active: r.active })));
+        }
+      } catch {}
+    })();
+  }, []);
+
+  const today = new Date();
+  const todayDow = today.getDay();
+  const nowMs = today.getTime();
+  const todayTimers = timers
+    .filter(t => t.dayOfWeek === todayDow)
+    .filter(t => {
+      const [hh, mm] = t.time.split(':').map(Number);
+      const candidate = new Date(today);
+      candidate.setHours(hh, mm, 0, 0);
+      const diffMin = (candidate.getTime() - nowMs) / 60000;
+      // Always hide past times
+      if (diffMin < 0) return false;
+      if (cutoffMinutes && cutoffMinutes > 0) {
+        // Hide only the pre-slot window; allow at exact time (diffMin === 0)
+        if (diffMin < cutoffMinutes && diffMin > 0) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => a.time.localeCompare(b.time));
+
+  return (
+    <div className="space-y-2">
+      {todayTimers.length === 0 ? (
+        <div className="text-sm text-gray-500">{t.noTimesAvailable || 'No times available'}</div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          {todayTimers.map((t) => {
+            const [hh, mm] = t.time.split(':');
+            const label = `${hh}:${mm}`;
+            const d = new Date(today);
+            d.setHours(parseInt(hh, 10), parseInt(mm, 10), 0, 0);
+            const iso = d.toISOString();
+            const active = selectedISO === iso;
+            return (
+              <button key={t.id} onClick={() => onSelectISO(iso)} className={`px-3 py-2 rounded border text-sm ${active ? 'bg-primary text-white border-primary' : 'border-gray-300'}`}>
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {selectedISO && (
+        <button onClick={() => onSelectISO(undefined)} className="text-xs text-gray-500 underline">{t.clearSelection || 'Clear'}</button>
+      )}
     </div>
   );
 }

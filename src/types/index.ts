@@ -32,6 +32,11 @@ export interface Order {
   createdAt: Date;
   deliveredAt?: Date;
   paymentMethod: 'cash' | 'points';
+  isDoubleBread?: boolean;
+  note?: string;
+  deliveryMethod?: DeliveryMethod;
+  pickupTime?: Date;
+  shippingTime?: Date;
 }
 
 export interface SandwichOrder {
@@ -44,6 +49,7 @@ export interface CartItem {
   id: string;
   bread: Bread;
   toppings: Topping[];
+  isDoubleBread?: boolean;
   quantity: number;
   totalPrice: number;
 }
@@ -82,6 +88,16 @@ export interface PointsTransaction {
 }
 
 export type Language = 'en' | 'fr';
+
+// Delivery / Shipping
+export type DeliveryMethod = 'pickup' | 'shipping';
+
+export interface ShippingTimer {
+  id: string;
+  dayOfWeek: number; // 0-6, Sunday=0
+  time: string; // 'HH:MM'
+  active: boolean;
+}
 
 export interface Translations {
   // Header
@@ -202,6 +218,14 @@ export interface Translations {
   shipping: string;
   free: string;
   backToCart: string;
+  // Delivery / Timers UI
+  deliveryMethodLabel?: string;
+  pickup?: string;
+  pickupTimeToday?: string;
+  shippingTimeToday?: string;
+  noTimesAvailable?: string;
+  clearSelection?: string;
+  selectTimeToContinue?: string;
   
   // Loyalty Points
   loyaltyPoints: string;
@@ -244,4 +268,12 @@ export interface Translations {
   preloadingTitle: string;
   preloadingSubtitle: string;
   preloadingTip: string;
+
+  // Builder UI
+  next?: string;
+  back?: string;
+  doubleBread?: string;
+  notePlaceholder?: string;
+  // Admin Timers
+  shippingTimers?: string;
 }

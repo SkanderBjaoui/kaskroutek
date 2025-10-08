@@ -113,3 +113,4 @@ export default function CartSidebar({ isOpen, onClose, onProceedToCheckout }: Ca
     </div>
   );
 }
+

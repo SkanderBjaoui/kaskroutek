@@ -310,6 +310,11 @@ export class SupabaseStore {
       created_at: string; 
       delivered_at?: string; 
       payment_method?: string;
+      is_double_bread?: boolean;
+      note?: string | null;
+      delivery_method?: 'pickup' | 'shipping' | null;
+      pickup_time?: string | null;
+      shipping_time?: string | null;
     }) => ({
       id: order.id,
       customerName: order.customer_name,
@@ -321,18 +326,27 @@ export class SupabaseStore {
       createdAt: new Date(order.created_at),
       deliveredAt: order.delivered_at ? new Date(order.delivered_at) : undefined,
       paymentMethod: (order.payment_method as 'cash' | 'points') || 'cash',
+      isDoubleBread: !!order.is_double_bread,
+      note: order.note || undefined,
+      deliveryMethod: order.delivery_method || undefined,
+      pickupTime: order.pickup_time ? new Date(order.pickup_time) : undefined,
+      shippingTime: order.shipping_time ? new Date(order.shipping_time) : undefined,
     }));
   }
 
   async addOrder(order: Omit<Order, 'id' | 'createdAt'> & { status?: OrderStatus }): Promise<Order> {
-    console.log('Adding order with data:', {
+      console.log('Adding order with data:', {
       customer_name: order.customerName,
       phone_number: order.phoneNumber,
       bread_id: order.bread.id,
       toppings: order.toppings,
       total_price: order.totalPrice,
-      status: order.status || 'awaiting_confirmation',
-      payment_method: order.paymentMethod
+        status: order.status || 'awaiting_confirmation',
+        payment_method: order.paymentMethod,
+        is_double_bread: order.isDoubleBread || false,
+        delivery_method: order.deliveryMethod || 'pickup',
+        pickup_time: order.pickupTime || null,
+        shipping_time: order.shippingTime || null,
     });
     
     const { data, error } = await supabase
@@ -344,7 +358,12 @@ export class SupabaseStore {
         toppings: order.toppings,
         total_price: order.totalPrice,
         status: order.status || 'awaiting_confirmation',
-        payment_method: order.paymentMethod
+        payment_method: order.paymentMethod,
+        is_double_bread: order.isDoubleBread || false,
+        note: order.note || null,
+        delivery_method: order.deliveryMethod || 'pickup',
+        pickup_time: order.pickupTime || null,
+        shipping_time: order.shippingTime || null,
       }])
       .select(`
         *,
@@ -375,6 +394,11 @@ export class SupabaseStore {
       createdAt: new Date(data.created_at),
       deliveredAt: data.delivered_at ? new Date(data.delivered_at) : undefined,
       paymentMethod: data.payment_method || 'cash',
+      isDoubleBread: !!data.is_double_bread,
+      note: data.note || undefined,
+      deliveryMethod: data.delivery_method || undefined,
+      pickupTime: data.pickup_time ? new Date(data.pickup_time) : undefined,
+      shippingTime: data.shipping_time ? new Date(data.shipping_time) : undefined,
     };
   }
 
@@ -408,6 +432,7 @@ export class SupabaseStore {
       createdAt: new Date(data.created_at),
       deliveredAt: data.delivered_at ? new Date(data.delivered_at) : undefined,
       paymentMethod: data.payment_method || 'cash',
+      isDoubleBread: !!data.is_double_bread,
     };
   }
 
@@ -435,6 +460,11 @@ export class SupabaseStore {
       created_at: string; 
       delivered_at?: string; 
       payment_method?: string;
+      is_double_bread?: boolean;
+      note?: string | null;
+      delivery_method?: 'pickup' | 'shipping' | null;
+      pickup_time?: string | null;
+      shipping_time?: string | null;
     }) => ({
       id: order.id,
       customerName: order.customer_name,
@@ -446,6 +476,11 @@ export class SupabaseStore {
       createdAt: new Date(order.created_at),
       deliveredAt: order.delivered_at ? new Date(order.delivered_at) : undefined,
       paymentMethod: (order.payment_method as 'cash' | 'points') || 'cash',
+      isDoubleBread: !!order.is_double_bread,
+      note: order.note || undefined,
+      deliveryMethod: order.delivery_method || undefined,
+      pickupTime: order.pickup_time ? new Date(order.pickup_time) : undefined,
+      shippingTime: order.shipping_time ? new Date(order.shipping_time) : undefined,
     }));
   }
 
@@ -623,6 +658,73 @@ export class SupabaseStore {
       console.error('Error awarding points for delivered order:', error);
       return false;
     }
+  }
+
+  /**
+   * Recompute the `active` flag for timers in a given table for TODAY only.
+   * A timer becomes inactive within the cutoff window before its time, and active otherwise
+   * (including once the exact time is reached or passed).
+   */
+  async recomputeTimerActiveFlagsForToday(
+    tableName: 'shipping_timers' | 'shipping_timers_delivery',
+    cutoffMinutes: number = 60
+  ): Promise<void> {
+    try {
+      const now = new Date();
+      const todayDow = now.getDay();
+
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('day_of_week', todayDow);
+
+      if (error || !data) return;
+
+      const updates: { id: string; active: boolean }[] = [];
+      for (const row of data as Array<{ id: string; day_of_week: number; time: string; active: boolean }>) {
+        const [hhStr, mmStr] = (row.time || '').split(':');
+        const hh = parseInt(hhStr || '0', 10);
+        const mm = parseInt(mmStr || '0', 10);
+        const candidate = new Date(now);
+        candidate.setHours(hh, mm, 0, 0);
+        const diffMin = (candidate.getTime() - now.getTime()) / 60000;
+
+        // Inactive only within the strictly-before window [now .. cutoff)
+        // Back active at the exact time and after
+        const shouldBeActive = !(diffMin < cutoffMinutes && diffMin > 0);
+
+        if (shouldBeActive !== !!row.active) {
+          updates.push({ id: row.id as unknown as string, active: shouldBeActive });
+        }
+      }
+
+      if (updates.length > 0) {
+        // Batch updates one-by-one to avoid overwriting other fields unintentionally
+        await Promise.all(
+          updates.map((u) =>
+            supabase
+              .from(tableName)
+              .update({ active: u.active })
+              .eq('id', u.id)
+          )
+        );
+      }
+    } catch (e) {
+      // Silent fail on client to avoid disrupting UX
+      console.warn('Failed to recompute timer active flags:', e);
+    }
+  }
+
+  /**
+   * Recompute both pickup and shipping timers for today.
+   */
+  async recomputeAllTimersActiveFlagsForToday(): Promise<void> {
+    await Promise.all([
+      // Pickup timers: 30-minute cutoff
+      this.recomputeTimerActiveFlagsForToday('shipping_timers', 30),
+      // Delivery timers: 60-minute cutoff
+      this.recomputeTimerActiveFlagsForToday('shipping_timers_delivery', 60),
+    ]);
   }
 }
 

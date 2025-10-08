@@ -12,18 +12,20 @@ import { getLocalizedName } from '@/utils/names';
 import Image from 'next/image';
 
 export default function CheckoutPage() {
-  const { cart, getTotalPrice, clearCart } = useCart();
+  const { cart, getTotalPrice, clearCart, deliveryMethod, pickupTimeISO, shippingTimeISO } = useCart();
   const { t, language } = useLanguage();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [customerName, setCustomerName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [orderNote, setOrderNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loyaltyPoints, setLoyaltyPoints] = useState<LoyaltyPoints | null>(null);
   const [usePoints, setUsePoints] = useState(false);
   const [pointsError, setPointsError] = useState('');
 
   const getItemPrice = (item: CartItem) => {
-    const basePrice = item.bread.price + item.toppings.reduce((sum: number, topping) => sum + topping.price, 0);
+    const breadPrice = item.bread.price * (item.isDoubleBread ? 2 : 1);
+    const basePrice = breadPrice + item.toppings.reduce((sum: number, topping) => sum + topping.price, 0);
     return basePrice;
   };
 
@@ -121,6 +123,11 @@ export default function CheckoutPage() {
             totalPrice: getItemPrice(item),
             status: 'awaiting_confirmation',
             paymentMethod: usePoints ? 'points' : 'cash',
+            isDoubleBread: item.isDoubleBread,
+            note: orderNote ? orderNote.slice(0, 50) : undefined,
+            deliveryMethod,
+            pickupTime: pickupTimeISO ? new Date(pickupTimeISO) : undefined,
+            shippingTime: shippingTimeISO ? new Date(shippingTimeISO) : undefined,
           });
         }
       }
@@ -128,7 +135,9 @@ export default function CheckoutPage() {
       // Send Telegram notification for each unique sandwich
       try {
         for (const item of cart.items) {
-          const sandwichDescription = `${getLocalizedName(item.bread.name, language)} with ${item.toppings.map(topping => getLocalizedName(topping.name, language)).join(', ')}`;
+          const baseBread = getLocalizedName(item.bread.name, language);
+          const doubleNote = item.isDoubleBread ? ' + double pate' : '';
+          const sandwichDescription = `${baseBread}${doubleNote} with ${item.toppings.map(topping => getLocalizedName(topping.name, language)).join(', ')}`;
           const currentTime = new Date().toLocaleString('en-US', {
             timeZone: 'Africa/Tunis',
             year: 'numeric',
@@ -150,7 +159,11 @@ export default function CheckoutPage() {
               sandwich: sandwichDescription,
               price: getItemPrice(item),
               time: currentTime,
-              paymentMethod: usePoints ? 'points' : 'cash'
+              paymentMethod: usePoints ? 'points' : 'cash',
+              note: orderNote ? orderNote.slice(0, 50) : undefined,
+              deliveryMethod,
+              pickupTime: pickupTimeISO || undefined,
+              shippingTime: shippingTimeISO || undefined,
             })
           });
         }
@@ -233,8 +246,15 @@ export default function CheckoutPage() {
 
                     {/* Item Details */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm sm:text-base font-semibold text-primary mb-1 truncate">
-                        {getLocalizedName(item.bread.name, language)}
+                      <h3 className="text-sm sm:text-base font-semibold text-primary mb-1">
+                        {item.isDoubleBread ? (
+                          <>
+                            <div>{getLocalizedName(item.bread.name, language)}</div>
+                            <div>{getLocalizedName(item.bread.name, language)}</div>
+                          </>
+                        ) : (
+                          <div className="truncate">{getLocalizedName(item.bread.name, language)}</div>
+                        )}
                       </h3>
                       {item.toppings.length > 0 && (
                         <div className="mb-1">
@@ -357,9 +377,22 @@ export default function CheckoutPage() {
                   )}
                 </div>
 
-                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+              <div className="bg-gray-50 p-3 sm:p-4 rounded-lg space-y-3">
                   <div className="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">{t.orderTotal}</div>
                   <div className="text-lg sm:text-xl font-bold text-primary">{formatCurrencyWithEmoji(getTotalPrice())}</div>
+                <div>
+                  <label htmlFor="orderNote" className="block text-xs sm:text-sm text-gray-600 mb-1">Note (max 50)</label>
+                  <textarea
+                    id="orderNote"
+                    value={orderNote}
+                    onChange={(e) => setOrderNote(e.target.value.slice(0, 50))}
+                    maxLength={50}
+                    rows={2}
+                    placeholder={t.notePlaceholder || 'Optional note for your sandwich'}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                  />
+                  <div className="text-right text-xs text-gray-500">{orderNote.length}/50</div>
+                </div>
                 </div>
 
                 <button

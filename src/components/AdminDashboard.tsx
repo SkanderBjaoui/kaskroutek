@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Bread, Topping, Order, OrderStatus, PointsTransaction } from '@/types';
+import { Bread, Topping, Order, OrderStatus, PointsTransaction, ShippingTimer } from '@/types';
 import { supabaseStore } from '@/data/supabaseStore';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,15 +16,21 @@ export default function AdminDashboard() {
   const [breads, setBreads] = useState<Bread[]>([]);
   const [toppings, setToppings] = useState<Topping[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [timers, setTimers] = useState<ShippingTimer[]>([]);
+  const [deliveryTimers, setDeliveryTimers] = useState<ShippingTimer[]>([]);
   const [deliveredOrders, setDeliveredOrders] = useState<Order[]>([]);
   const [cancelledOrders, setCancelledOrders] = useState<Order[]>([]);
   const [showBreadForm, setShowBreadForm] = useState(false);
   const [showToppingForm, setShowToppingForm] = useState(false);
   const [editingBread, setEditingBread] = useState<Bread | null>(null);
   const [editingTopping, setEditingTopping] = useState<Topping | null>(null);
+  const [editingTimer, setEditingTimer] = useState<ShippingTimer | null>(null);
   const [breadForm, setBreadForm] = useState({ nameEn: '', nameFr: '', price: '', imageUrl: '' });
   const [toppingForm, setToppingForm] = useState({ nameEn: '', nameFr: '', price: '', imageUrl: '', category: 'extra' as 'salads' | 'meats' | 'condiments' | 'extra' });
   const [toppingFilter, setToppingFilter] = useState<'all' | 'condiments' | 'meats' | 'salads' | 'extra'>('all');
+  const [showTimerForm, setShowTimerForm] = useState(false);
+  const [timerForm, setTimerForm] = useState<{ dayOfWeek: number; time: string; active: boolean }>({ dayOfWeek: 1, time: '12:00', active: true });
+  const [timerType, setTimerType] = useState<'pickup' | 'shipping'>('pickup');
   const [loyaltyPhone, setLoyaltyPhone] = useState('');
   const [loyaltyName, setLoyaltyName] = useState('');
   const [loyaltyPointsToAdd, setLoyaltyPointsToAdd] = useState('');
@@ -48,12 +54,14 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
-      const [breadsData, toppingsData, ordersData, deliveredData, cancelledData] = await Promise.all([
+      const [breadsData, toppingsData, ordersData, deliveredData, cancelledData, timersData, deliveryTimersData] = await Promise.all([
         supabaseStore.getBreads(),
         supabaseStore.getToppings(),
         supabaseStore.getOrders(),
         supabaseStore.getDeliveredOrders(),
-        supabaseStore.getOrdersByStatus('cancelled')
+        supabaseStore.getOrdersByStatus('cancelled'),
+        supabaseStore.supabase.from('shipping_timers').select('*').order('day_of_week').order('time'),
+        supabaseStore.supabase.from('shipping_timers_delivery').select('*').order('day_of_week').order('time')
       ]);
       
       setBreads(breadsData);
@@ -61,6 +69,10 @@ export default function AdminDashboard() {
       setOrders(ordersData.filter(order => order.status !== 'delivered' && order.status !== 'cancelled'));
       setDeliveredOrders(deliveredData);
       setCancelledOrders(cancelledData);
+      if (timersData.error) throw timersData.error;
+      setTimers((timersData.data || []).map((r: any) => ({ id: r.id, dayOfWeek: r.day_of_week, time: r.time, active: r.active })));
+      if (deliveryTimersData.error) throw deliveryTimersData.error;
+      setDeliveryTimers((deliveryTimersData.data || []).map((r: any) => ({ id: r.id, dayOfWeek: r.day_of_week, time: r.time, active: r.active })));
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -620,6 +632,196 @@ export default function AdminDashboard() {
     </div>
   );
 
+  const renderTimersManagement = () => (
+    <div className="h-full flex flex-col">
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex-shrink-0">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-semibold text-primary">Pickup & Shipping Timers</h2>
+          <button
+            onClick={() => {
+              setEditingTimer(null);
+              setTimerForm({ dayOfWeek: 1, time: '12:00', active: true });
+              setTimerType('pickup');
+              setShowTimerForm(true);
+            }}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors"
+          >
+            Add Timer
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-auto p-6">
+        <div className="bg-white rounded-xl shadow-lg mb-6">
+          <div className="px-6 py-3 border-b text-lg font-semibold">Pickup Timers</div>
+          <div className="overflow-x-auto">
+            <table className="min-w-max w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {timers.map((tm) => (
+                  <tr key={tm.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][tm.dayOfWeek]}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{tm.time}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{tm.active ? 'Yes' : 'No'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      <button
+                        onClick={() => {
+                          setEditingTimer(tm);
+                          setTimerForm({ dayOfWeek: tm.dayOfWeek, time: tm.time, active: tm.active });
+                          setTimerType('pickup');
+                          setShowTimerForm(true);
+                        }}
+                        className="text-primary hover:text-primary-light"
+                      >
+                        {t.edit}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm('Delete this timer?')) return;
+                          await supabaseStore.supabase.from('shipping_timers').delete().eq('id', tm.id);
+                          await loadData();
+                        }}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        {t.delete}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow-lg">
+          <div className="px-6 py-3 border-b text-lg font-semibold">Shipping Timers</div>
+          <div className="overflow-x-auto">
+            <table className="min-w-max w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Active</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {deliveryTimers.map((tm) => (
+                  <tr key={tm.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][tm.dayOfWeek]}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{tm.time}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{tm.active ? 'Yes' : 'No'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
+                      <button
+                        onClick={() => {
+                          setEditingTimer(tm);
+                          setTimerForm({ dayOfWeek: tm.dayOfWeek, time: tm.time, active: tm.active });
+                          setTimerType('shipping');
+                          setShowTimerForm(true);
+                        }}
+                        className="text-primary hover:text-primary-light"
+                      >
+                        {t.edit}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm('Delete this timer?')) return;
+                          await supabaseStore.supabase.from('shipping_timers_delivery').delete().eq('id', tm.id);
+                          await loadData();
+                        }}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        {t.delete}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {showTimerForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+            <h3 className="text-2xl font-semibold text-primary mb-6">{editingTimer ? 'Edit Timer' : 'Add Timer'}</h3>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const targetTable = editingTimer
+                  ? (timers.find(t => editingTimer && t.id === editingTimer.id) ? 'shipping_timers' : 'shipping_timers_delivery')
+                  : (timerType === 'pickup' ? 'shipping_timers' : 'shipping_timers_delivery');
+                if (editingTimer) {
+                  await supabaseStore.supabase
+                    .from(targetTable)
+                    .update({ day_of_week: timerForm.dayOfWeek, time: timerForm.time, active: timerForm.active })
+                    .eq('id', editingTimer.id);
+                } else {
+                  await supabaseStore.supabase
+                    .from(targetTable)
+                    .insert({ day_of_week: timerForm.dayOfWeek, time: timerForm.time, active: timerForm.active });
+                }
+                setShowTimerForm(false);
+                setEditingTimer(null);
+                await loadData();
+              }}
+              className="space-y-4"
+            >
+              {!editingTimer && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Timer Type</label>
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2">
+                      <input type="radio" checked={timerType === 'pickup'} onChange={() => setTimerType('pickup')} /> Pickup
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input type="radio" checked={timerType === 'shipping'} onChange={() => setTimerType('shipping')} /> Shipping
+                    </label>
+                  </div>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Day of Week</label>
+                <select
+                  value={timerForm.dayOfWeek}
+                  onChange={(e) => setTimerForm({ ...timerForm, dayOfWeek: parseInt(e.target.value, 10) })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                >
+                  {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map((d, idx) => (
+                    <option key={idx} value={idx}>{d}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Time (HH:MM)</label>
+                <input
+                  type="time"
+                  value={timerForm.time}
+                  onChange={(e) => setTimerForm({ ...timerForm, time: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  required
+                />
+              </div>
+              <label className="flex items-center gap-2">
+                <input type="checkbox" checked={timerForm.active} onChange={(e) => setTimerForm({ ...timerForm, active: e.target.checked })} /> Active
+              </label>
+              <div className="flex space-x-4">
+                <button type="button" onClick={() => { setShowTimerForm(false); setEditingTimer(null); }} className="flex-1 py-3 px-6 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">{t.cancel}</button>
+                <button type="submit" className="flex-1 py-3 px-6 bg-primary text-white rounded-lg hover:bg-primary-light transition-colors">{editingTimer ? t.update : t.add}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
   const renderOrders = () => (
     <div className="h-full flex flex-col">
       {/* Sticky Header */}
@@ -653,8 +855,39 @@ export default function AdminDashboard() {
                 <div className="border-t pt-4">
                   <div className="mb-2">
                     <span className="font-medium">Bread: </span>
-                    <span className="text-gray-700">{getLocalizedName(order.bread.name, language)}</span>
+                    <span className="text-gray-700">
+                      {order.isDoubleBread ? (
+                        <>
+                          <div>{getLocalizedName(order.bread.name, language)}</div>
+                          <div>{getLocalizedName(order.bread.name, language)}</div>
+                        </>
+                      ) : (
+                        <div>{getLocalizedName(order.bread.name, language)}</div>
+                      )}
+                    </span>
                   </div>
+                  <div className="mb-2">
+                    <span className="font-medium">Delivery: </span>
+                    <span className="text-gray-700">
+                      {order.deliveryMethod || 'pickup'}
+                      {order.deliveryMethod === 'shipping' && order.shippingTime && (
+                        <>
+                          {' '}• Time: {new Date(order.shippingTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </>
+                      )}
+                      {order.deliveryMethod === 'pickup' && order.pickupTime && (
+                        <>
+                          {' '}• Time: {new Date(order.pickupTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </>
+                      )}
+                    </span>
+                  </div>
+                  {order.note && (
+                    <div className="mb-2">
+                      <span className="font-medium">Note: </span>
+                      <span className="text-gray-700 break-words">{order.note}</span>
+                    </div>
+                  )}
                   {order.toppings.length > 0 && (
                     <div className="mb-4">
                       <span className="font-medium">Toppings: </span>
@@ -747,7 +980,16 @@ export default function AdminDashboard() {
                 <div className="border-t pt-4">
                   <div className="mb-2">
                     <span className="font-medium">Bread: </span>
-                    <span className="text-gray-700">{getLocalizedName(order.bread.name, language)}</span>
+                    <span className="text-gray-700">
+                      {order.isDoubleBread ? (
+                        <>
+                          <div>{getLocalizedName(order.bread.name, language)}</div>
+                          <div>{getLocalizedName(order.bread.name, language)}</div>
+                        </>
+                      ) : (
+                        <div>{getLocalizedName(order.bread.name, language)}</div>
+                      )}
+                    </span>
                   </div>
                   {order.toppings.length > 0 && (
                     <div className="mb-4">
@@ -828,7 +1070,16 @@ export default function AdminDashboard() {
                 <div className="border-t pt-4">
                   <div className="mb-2">
                     <span className="font-medium">Bread: </span>
-                    <span className="text-gray-700">{getLocalizedName(order.bread.name, language)}</span>
+                    <span className="text-gray-700">
+                      {order.isDoubleBread ? (
+                        <>
+                          <div>{getLocalizedName(order.bread.name, language)}</div>
+                          <div>{getLocalizedName(order.bread.name, language)}</div>
+                        </>
+                      ) : (
+                        <div>{getLocalizedName(order.bread.name, language)}</div>
+                      )}
+                    </span>
                   </div>
                   
                   {order.toppings.length > 0 && (
@@ -948,7 +1199,16 @@ export default function AdminDashboard() {
                       {customerOrders.map((o) => (
                         <tr key={o.id}>
                           <td className="px-4 py-2 text-sm text-gray-700">{o.createdAt.toLocaleString()}</td>
-                          <td className="px-4 py-2 text-sm text-gray-700">{getLocalizedName(o.bread.name, language)}</td>
+                          <td className="px-4 py-2 text-sm text-gray-700">
+                            {o.isDoubleBread ? (
+                              <>
+                                <div>{getLocalizedName(o.bread.name, language)}</div>
+                                <div>{getLocalizedName(o.bread.name, language)}</div>
+                              </>
+                            ) : (
+                              <div>{getLocalizedName(o.bread.name, language)}</div>
+                            )}
+                          </td>
                           <td className="px-4 py-2 text-sm text-gray-700">{formatCurrencyNoEmoji(o.totalPrice)}</td>
                           <td className="px-4 py-2 text-sm text-gray-700">{o.paymentMethod}</td>
                           <td className="px-4 py-2 text-sm text-gray-700">{o.status}</td>
@@ -1107,6 +1367,7 @@ export default function AdminDashboard() {
               { id: 'delivered', label: t.deliveredOrders, count: deliveredOrders.length, icon: '✅' },
               { id: 'cancelled', label: t.cancelledOrders, count: cancelledOrders.length, icon: '❌' },
               { id: 'loyalty', label: t.loyaltyPoints, count: 0, icon: '⭐' },
+              { id: 'timers', label: t.shippingTimers || 'Shipping Timers', count: timers.length, icon: '⏰' },
             { id: 'customers', label: t.customers, count: 0, icon: '👤' },
             ].map((tab) => (
               <button
@@ -1204,6 +1465,7 @@ export default function AdminDashboard() {
         {activeTab === 'cancelled' && renderCancelledOrders()}
         {activeTab === 'loyalty' && renderLoyaltyManagement()}
         {activeTab === 'customers' && renderCustomers()}
+        {activeTab === 'timers' && renderTimersManagement()}
       </div>
 
       {/* Bread Form Modal */}
