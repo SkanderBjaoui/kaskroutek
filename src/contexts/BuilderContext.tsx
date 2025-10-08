@@ -51,8 +51,9 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
       const current = prev[topping.id] || 0;
       const next = Math.max(0, current - 1);
       if (next === 0) {
-        const { [topping.id]: _, ...rest } = prev;
-        return rest;
+        const clone = { ...prev };
+        delete clone[topping.id];
+        return clone;
       }
       return { ...prev, [topping.id]: next };
     });
@@ -92,7 +93,7 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
     clearBuilder,
     getSelectedToppingsArray,
     getCategoryQuantity,
-  }), [selectedBread, isDoubleBread, toppingQuantities]);
+  }), [selectedBread, isDoubleBread, toppingQuantities, getSelectedToppingsArray, getCategoryQuantity, setBread, toggleDoubleBread, incrementTopping, decrementTopping, clearBuilder]);
 
   return (
     <BuilderContext.Provider value={value}>

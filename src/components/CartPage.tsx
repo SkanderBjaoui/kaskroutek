@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import Link from 'next/link';
@@ -240,11 +240,11 @@ function Timers({ selectedISO, onSelectISO, cutoffMinutes, tableName }: { select
           .select('*')
           .eq('active', true);
         if (!error) {
-          setTimers((data || []).map((r: any) => ({ id: r.id, dayOfWeek: r.day_of_week, time: r.time, active: r.active })));
+          setTimers((data || []).map((r: { id: string; day_of_week: number; time: string; active: boolean }) => ({ id: r.id, dayOfWeek: r.day_of_week, time: r.time, active: r.active })));
         }
       } catch {}
     })();
-  }, []);
+  }, [tableName]);
 
   const today = new Date();
   const todayDow = today.getDay();

@@ -70,9 +70,9 @@ export default function AdminDashboard() {
       setDeliveredOrders(deliveredData);
       setCancelledOrders(cancelledData);
       if (timersData.error) throw timersData.error;
-      setTimers((timersData.data || []).map((r: any) => ({ id: r.id, dayOfWeek: r.day_of_week, time: r.time, active: r.active })));
+      setTimers((timersData.data || []).map((r: { id: string; day_of_week: number; time: string; active: boolean }) => ({ id: r.id, dayOfWeek: r.day_of_week, time: r.time, active: r.active })));
       if (deliveryTimersData.error) throw deliveryTimersData.error;
-      setDeliveryTimers((deliveryTimersData.data || []).map((r: any) => ({ id: r.id, dayOfWeek: r.day_of_week, time: r.time, active: r.active })));
+      setDeliveryTimers((deliveryTimersData.data || []).map((r: { id: string; day_of_week: number; time: string; active: boolean }) => ({ id: r.id, dayOfWeek: r.day_of_week, time: r.time, active: r.active })));
     } catch (error) {
       console.error('Error loading data:', error);
     }
